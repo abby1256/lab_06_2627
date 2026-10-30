@@ -33,57 +33,120 @@ annual <- met |>
 
 ### Task 1: Themes and Legends
 
-- [ ] Experiment with different *themes* for your plot of July maximum temperatures in Southampton: how does it change if you use `theme_minimal()`, `theme_bw()`?
-- [ ] In your scatter plot of monthly maximum temperatures at four stations, adjust the theme to move the legend to the bottom of the plot. (Hint: look for `legend.position` in the help page for `theme`.)
+- [x] Experiment with different *themes* for your plot of July maximum temperatures in Southampton: how does it change if you use `theme_minimal()`, `theme_bw()`?
+- [x] In your scatter plot of monthly maximum temperatures at four stations, adjust the theme to move the legend to the bottom of the plot. (Hint: look for `legend.position` in the help page for `theme`.)
 
 ::: {.solution}
+```{r}
+graph <- met |> select(tmax, month, year, station) |> filter(station == "southampton", month == 7, !is.na(tmax)) |> group_by(year) |> ggplot(aes(x = year, y = tmax)) + geom_line() + labs(title = "Maximum Daily July Temperature Per Year", x = "Year", y = "Maximum Temperature")
 
+graph1 <- met |> select(tmax, month, year, station) |> filter(station == "southampton", month == 7, !is.na(tmax)) |> group_by(year) |> ggplot(aes(x = year, y = tmax)) + geom_line() + labs(title = "Maximum Daily July Temperature Per Year", x = "Year", y = "Maximum Temperature") + theme_minimal()
+
+graph2 <- met |> select(tmax, month, year, station) |> filter(station == "southampton", month == 7, !is.na(tmax)) |> group_by(year) |> ggplot(aes(x = year, y = tmax)) + geom_line() + labs(title = "Maximum Daily July Temperature Per Year", x = "Year", y = "Maximum Temperature") + theme_bw() 
+
+graph
+graph1
+graph2
+
+graph3 <- met |> select(tmax, station, date) |> filter(station %in% c("southampton", "oxford", "sheffield", "paisley")) |> ggplot(aes(x = date, y = tmax, colour = station)) + geom_point(alpha = 0.25) + geom_smooth() + theme(legend.position = "bottom")
+graph3
+```
+The theme_minimal removes the grey background and makes it white instead. The theme_bw removes the grey background like the theme_minimal but it also puts a box around the graph.
 :::
 
 ### Task 2: The Seasonal Cycle and Facets
 
-- [ ] Plot `tmax` against `month` for Southampton. How large is the seasonal swing in temperature, compared with the change in the smooth lines in your scatter plot of monthly maximum temperatures?
-- [ ] Use `facet_wrap` to produce the scatter plot with smooth trend lines for all stations (not just the four in the lab). Does this support your conclusion about the trend in maximum temperatures?
-- [ ] Adjust output options to make the plot more visible: modify the `ncol` option of `facet_wrap`, and adjust the rendered plot size by adding a `#| fig-height:` option to the top of the cell (in the same way as `#| message: false`).
-- [ ] **Extension:** Produce the annual-mean plot (complete years only) for all 36 stations using `facet_wrap`, and compare it with your faceted plot of monthly values. Does it now support the conclusion that temperatures are rising?
+- [x] Plot `tmax` against `month` for Southampton. How large is the seasonal swing in temperature, compared with the change in the smooth lines in your scatter plot of monthly maximum temperatures?
+- [x] Use `facet_wrap` to produce the scatter plot with smooth trend lines for all stations (not just the four in the lab). Does this support your conclusion about the trend in maximum temperatures?
+- [x] Adjust output options to make the plot more visible: modify the `ncol` option of `facet_wrap`, and adjust the rendered plot size by adding a `#| fig-height:` option to the top of the cell (in the same way as `#| message: false`).
+- [x] **Extension:** Produce the annual-mean plot (complete years only) for all 36 stations using `facet_wrap`, and compare it with your faceted plot of monthly values. Does it now support the conclusion that temperatures are rising?
 
 ::: {.solution}
+```{r}
+##| fig-height: 15
+graph5 <- met |> select(tmax, station, month) |> filter(station == "southampton", !is.na(tmax)) |> group_by(month) |> ggplot(aes(x = month, y = tmax)) + geom_point() + labs(x = "Month", y = "Max Temp")
+graph5
 
+graph6 <- met |> select(tmax, station, month) |> filter(!is.na(tmax)) |> group_by(month, station) |> ggplot(aes(x = month, y = tmax)) + geom_point() + labs(x = "Month", y = "Max Temp") + geom_smooth() + facet_wrap(~station)
+graph6
+
+graph7 <- met |> select(tmax, station, date, year) |> group_by(station, year) |> summarise(max_temp = mean(tmax, na.rm = TRUE), n_values = sum(!is.na(tmax))) |> filter(n_values == 12) |> ggplot(aes(x = year, y = max_temp, colour = station)) + geom_point(alpha = 0.25) + geom_smooth(se = FALSE) + facet_wrap(~station)
+graph7
+```
+It is much warmer in the summer months and colder in the winter months. All the stations seem to have a similar trend in temperature. Thed original sizing seems easiest to read.
 :::
 
 ### Task 3: Colour Blindness
 
-- [ ] Redraw your plot of annual mean maximum temperatures (complete years only) from the lab so that it would still work for a reader with red–green colour blindness, or if printed in black and white. (Hint: see the Colour Blindness section of the Week 6 notes.)
+- [x] Redraw your plot of annual mean maximum temperatures (complete years only) from the lab so that it would still work for a reader with red–green colour blindness, or if printed in black and white. (Hint: see the Colour Blindness section of the Week 6 notes.)
 
 ::: {.solution}
+```{r}
+graph8_data <- met |> select(tmax, station, date, year) |> filter(station %in% c("southampton", "oxford", "sheffield", "paisley")) |> group_by(station, year) |> summarise(max_temp = mean(tmax, na.rm = TRUE), n_values = sum(!is.na(tmax))) |> filter(n_values == 12)
+graph8_data
 
+graph8 <- ggplot(graph8_data, aes(x = year, y = max_temp, colour = station)) + geom_point(alpha = 0.25) + geom_smooth(se = FALSE) + scale_color_viridis_d()
+graph8
+
+graph9 <- ggplot(graph8_data, aes(x = year, y = max_temp, colour = station)) + geom_point(alpha = 0.25) + geom_smooth(se = FALSE) + scale_colour_grey()
+graph9
+
+```
 :::
 
 ### Task 4: Temperature and Sunshine
 
-- [ ] Create a scatter plot of `tmax` against `date` across all stations. Colour the points by the amount of `sun` at that station.
-- [ ] Look up the function `scale_colour_gradient2`. Use it to add a diverging colour scale, with low sun coloured blue, high sun coloured red. Set the midpoint to be the median value and the mid colour to be white.
-- [ ] What conclusion can you draw from this plot?
+- [x] Create a scatter plot of `tmax` against `date` across all stations. Colour the points by the amount of `sun` at that station.
+- [x] Look up the function `scale_colour_gradient2`. Use it to add a diverging colour scale, with low sun coloured blue, high sun coloured red. Set the midpoint to be the median value and the mid colour to be white.
+- [x] What conclusion can you draw from this plot?
 
 ::: {.solution}
+```{r}
+graph10 <- met |> select(tmax, date, sun) |> filter(!is.na(sun)) |> ggplot(aes(x = date, y = tmax, colour = sun)) + geom_point()
+graph10
+
+midpoint_sun <- median(met$sun, na.rm = TRUE)
+midpoint_sun
+
+graph11 <- met |> select(tmax, date, sun) |> filter(!is.na(sun)) |> ggplot(aes(x = date, y = tmax, colour = sun)) + geom_point() + scale_colour_gradient2(low = "blue", high = "red", mid = "white", midpoint = midpoint_sun)
+graph11
+```
+The plot shows a slight increase in temperature range and a larger range with more extreme values as time passes. 
 
 :::
 
 ### Task 5: Comparing Stations
 
-- [ ] Look at your bar chart of the number of monthly records at each station. Which stations have the longest records? How might this affect comparisons between stations, such as the average rainfall?
+- [x] Look at your bar chart of the number of monthly records at each station. Which stations have the longest records? How might this affect comparisons between stations, such as the average rainfall?
 
 ::: {.solution}
-
+```{r}
+bar_chart <- met |> select(station) |> group_by(station) |> summarise(station_count=n()) |> ggplot(aes(x = reorder(station, -station_count), y = station_count)) + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+bar_chart
+```
+Armagh and Oxford have the most data points and Camborne and Cardiff have the least. This means Camborne and Cardiff may have averages biased towards specific months. 
 :::
 
 ### Task 6: More Distributions
 
-- [ ] Customise your box plot of rainfall by station: change the length of the whiskers so that outliers appear at both the low and high ends, and change the outlier point colour to red. Does it make sense to call these points "outliers"?
-- [ ] Look up how to flip the $x$ and $y$ axes, so that the rainfall appears on the $x$ axis and the station on the $y$ axis. (Hint: you can change the `aes`, but there is another way of doing it that doesn't require modifying the labels...)
-- [ ] For a handful of stations (e.g. Southampton, Cwmystwyth, Eskdalemuir and Cambridge), overlay a violin plot and a narrow box plot, as in the Week 6 notes. What does the violin show that the box plot doesn't?
-- [ ] **Extension:** Add a density curve on top of your histogram of monthly rainfall. (Hint: see the Week 6 notes.)
+- [x] Customise your box plot of rainfall by station: change the length of the whiskers so that outliers appear at both the low and high ends, and change the outlier point colour to red. Does it make sense to call these points "outliers"?
+- [x] Look up how to flip the $x$ and $y$ axes, so that the rainfall appears on the $x$ axis and the station on the $y$ axis. (Hint: you can change the `aes`, but there is another way of doing it that doesn't require modifying the labels...)
+- [x] For a handful of stations (e.g. Southampton, Cwmystwyth, Eskdalemuir and Cambridge), overlay a violin plot and a narrow box plot, as in the Week 6 notes. What does the violin show that the box plot doesn't?
+- [x] **Extension:** Add a density curve on top of your histogram of monthly rainfall. (Hint: see the Week 6 notes.)
 
 ::: {.solution}
+```{r}
+boxplot <- ggplot(met, aes(x = station, y = rain)) + geom_boxplot(outlier.colour = "red", coef = 0.5) + labs(title = "Rainfall by Station", x = "Station", y = "Rainfall(mm)") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+boxplot
 
+boxplot2 <- ggplot(met, aes(x = station, y = rain)) + geom_boxplot(outlier.colour = "red", coef = 0.5) + labs(title = "Rainfall by Station", x = "Station", y = "Rainfall(mm)") + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + coord_flip()
+boxplot2
+
+boxplot3 <- met |> select(station, rain) |> filter(station %in% c("southampton", "cwmystwyth", "eskdalemuir", "cambridge")) |> ggplot(aes(x = station, y = rain, fill = station)) + geom_violin(alpha = 0.4) + geom_boxplot(width = 0.15, outlier.shape = NA) + theme_minimal() + scale_colour_viridis_b() + labs(x = "Station", y = "Rainfall(mm)")
+boxplot3
+
+histogram <- ggplot(met, aes(x = rain)) + geom_histogram(aes(y = after_stat(density)), binwidth = 15, colour = "red") + labs(x = "Rainfall(mm)", y = "Density") + geom_density(colour = "blue", linewidth = 1)
+histogram
+```
+The violin shows the distribution of data which the box plot doesn't, so we can tell the rainfall in Cambridge is a lot more consistent around the mean than Cwmystwyth.
 :::
